@@ -19,8 +19,8 @@ Vagrant.configure("2") do |config|
     apt-get install -y apache2
     apt-get install php7.0 php7.0-fpm libapache2-mod-php7.0 -y
 
-    curl https://raw.githubusercontent.com/maxmax03/devops-files/master/02-tools/files/index.html -o /var/www/html/index.html
-    curl https://raw.githubusercontent.com/maxmax03/devops-files/master/02-tools/files/index.php -o /var/www/html/index.php
+    curl https://raw.githubusercontent.com/Fenikks/devops-files/master/02-tools/files/index.html -o /var/www/html/index.html
+    curl https://raw.githubusercontent.com/Fenikks/devops-files/master/02-tools/files/index.php -o /var/www/html/index.php
     cat << EOF >> /etc/apache2/sites-available/000-default.conf
 <VirtualHost *:81>
   DirectoryIndex index.php	
