@@ -1,35 +1,45 @@
 Vagrant.configure("2") do |config|
-  config.vm.box = "debian9"
-
+  config.vm.box = "maxsh-CentOS"
+  config.vm.hostname = "centos8"
+  config.vm.define "centos"
   config.vm.provider "virtualbox" do |vb|
-    vb.name = "debian9"
+    vb.name = "centos"
     vb.memory = "1024"
     vb.cpus = 1
   end
 
-  config.vm.hostname = "debian9"
+  # config.vm.synced_folder ".", "/home/vagrant"
 
-  # config.vm.synced_folder ".", "/home/vagrant/code",
-  #   owner: "www-data", group: "www-data"
-  
   config.vm.network "forwarded_port", guest: 80, host: 8080
   config.vm.network "forwarded_port", guest: 81, host: 8081
+
   config.vm.provision "shell", inline: <<-SHELL
-    apt-get update
-    apt-get install -y apache2
-    apt-get install php7.0 php7.0-fpm libapache2-mod-php7.0 -y
+    yum update
+    yum install -y httpd php mysql-server mc
+    mkdir -p /var/www/localhost
+    mkdir -p /var/www/localhost2
+    curl https://raw.githubusercontent.com/Fenikks/devops-files/master/02-tools/files/index.html -o /var/www/localhost/index.html
+    curl https://raw.githubusercontent.com/Fenikks/devops-files/master/02-tools/files/index.php -o /var/www/localhost2/index.php
+    
+    cat << EOF >> /etc/httpd/conf/httpd.conf
+    Listen 81
 
-    curl https://raw.githubusercontent.com/maxmax03/devops-files/master/02-tools/files/index.html -o /var/www/html/index.html
-    curl https://raw.githubusercontent.com/maxmax03/devops-files/master/02-tools/files/index.php -o /var/www/html/index.php
-    cat << EOF >> /etc/apache2/sites-available/000-default.conf
-<VirtualHost *:81>
-  DirectoryIndex index.php	
-</VirtualHost>
+    <VirtualHost *:80>
+    DocumentRoot /var/www/localhost
+    DirectoryIndex index.html
+    </VirtualHost>
+
+    <VirtualHost *:81>
+    DocumentRoot /var/www/localhost2
+    DirectoryIndex index.php  
+    </VirtualHost>
 EOF
-
-    echo 'Listen 81' >> /etc/apache2/ports.conf
-
-    service php7.0-fpm restart
-    systemctl restart apache2
- SHELL
+    
+    firewall-cmd --set-default-zone=trusted
+    systemctl enable httpd.service
+    systemctl restart mysqld.service
+    service httpd restart
+    service php-fpm restart
+  SHELL
+ 
 end
