@@ -14,8 +14,6 @@ Vagrant.configure("2") do |config|
   config.vm.network "forwarded_port", guest: 81, host: 8081
 
   config.vm.provision "shell", inline: <<-SHELL
-    yum update
-    yum install -y httpd php mysql-server mc
     mkdir -p /var/www/localhost
     mkdir -p /var/www/localhost2
     curl https://raw.githubusercontent.com/Fenikks/devops-files/master/02-tools/files/index.html -o /var/www/localhost/index.html
