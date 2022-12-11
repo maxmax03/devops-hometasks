@@ -1,0 +1,45 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/debian11"
+  config.vm.hostname = "lxc"
+  config.vm.define "lxc"
+  config.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+      vb.name   = "lxc.vagrant.vm"
+  config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+      apt-get update
+      apt-get install -y lxc lxc-templates
+      sed -i "s/^#force_color_prompt=yes\$/force_color_prompt=yes/g" /home/vagrant/.bashrc
+      sed -i "s/^#alias ll='ls -l'\$/alias ll='ls -la'/g" /home/vagrant/.bashrc
+      echo "alias ll='ls -l'" >> /root/.bashrc
+      #  autostart add
+      echo 'lxc.start.auto = 1' >> /etc/lxc/default.conf
+      #  create lxc
+      systemctl enable lxc-net
+      systemctl restart lxc-net
+      sleep 5
+      lxc-create -n html -t download -- -d centos -r 9-Stream -a amd64
+      lxc-create -n php -t download -- -d centos -r 9-Stream -a amd64
+      lxc-autostart
+      #  create services in lxc
+      lxc-attach -n html -- dnf update
+      lxc-attach -n html -- dnf install -y httpd
+      lxc-attach -n php -- yum update
+      lxc-attach -n php -- yum install -y httpd php php-fpm
+      #  create index files in lxc
+      # lxc-attach html -- curl https://raw.githubusercontent.com/Fenikks/devops-files/master/02-tools/files/index.html -o /etc/httpd/conf.d/welcome.conf
+      # lxc-attach php -- curl https://raw.githubusercontent.com/Fenikks/devops-files/master/02-tools/files/index.php -o /var/www/html/index.php
+      #  forwording ports localhost
+      # GET_CONTAINER_IP=$(sudo lxc-info -i html | awk '{print $2}')
+      # iptables -t nat -A PREROUTING -p tcp -i eth0 --dport 80 -j DNAT --to-destination $GET_CONTAINER_IP:80
+      #  restart services
+      # lxc-attach html -- systemctl enable httpd
+      # lxc-attach html -- systemctl restart httpd
+      # systemctl restart lxc-net
+      
+      
+      # lxc-attach html -- systemctl start httpd
+  SHELL
+end
