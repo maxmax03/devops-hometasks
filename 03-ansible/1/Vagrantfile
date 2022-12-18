@@ -1,0 +1,20 @@
+Vagrant.configure("2") do |config|
+    config.vm.box = "generic/debian11"
+    config.vm.hostname = "ansible"
+    config.vm.provider "virtualbox" do |vb|
+        vb.memory = "1024"
+        vb.name   = "ansible.vagrant.vm"
+    config.vm.synced_folder  ".", "/vagrant", disabled: false
+    config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
+    config.vm.network "forwarded_port", guest: 81, host: 8081, host_ip: "127.0.0.1"
+    end
+
+    config.vm.define "master" do |master|
+        master.vm.network "private_network", ip: "192.168.50.5"
+        master.vm.provision "ansible_local" do |ansible|
+            ansible.playbook = "playbook.yaml"
+            ansible.inventory_path = "inventory"
+            ansible.become = true                
+        end
+    end
+end

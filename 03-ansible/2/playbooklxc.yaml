@@ -1,0 +1,74 @@
+- name: Master provision
+  hosts: master
+  collections:
+  - community.general
+
+  tasks:
+  - name: Set alias ll
+    replace:
+      path: /home/vagrant/.bashrc
+      regexp: "^#alias ll='ls -l'$"
+      replace: "alias ll='ls -la'"
+
+  - name: Set colors
+    replace:
+      path: /home/vagrant/.bashrc
+      regexp: "^#force_color_prompt=yes$"
+      replace: "force_color_prompt=yes"
+
+  - name: Install packages
+    apt:
+      pkg:
+      - lxc
+      - lxc-templates
+      - python3
+      - python3-lxc
+      state: present
+
+  - name: Create lxc html container
+    community.general.lxc_container:
+      name: html
+      template: download
+      template_options: --dist centos --release 9-Stream --arch amd64
+      state: started
+        
+  - name: Create lxc php container
+    community.general.lxc_container:
+      name: php
+      template: download
+      template_options: --dist centos --release 9-Stream --arch amd64
+      state: started
+
+- name: LXC provision
+  hosts: master
+  
+  tasks:
+  - name: Conf html lxc
+    community.general.lxc_container:
+      name: html
+      state: restarted
+      container_command: |
+        dnf install -y httpd
+        systemctl enable httpd
+        curl https://raw.githubusercontent.com/maxmax03/devops-hometasks/main/02-lxc/index.html -o /var/www/html/index.html
+
+  - name: Conf php lxc
+    community.general.lxc_container:
+      name: php
+      state: restarted
+      container_command: |
+        dnf install -y httpd php php-fpm
+        systemctl enable httpd
+        curl https://raw.githubusercontent.com/maxmax03/devops-hometasks/main/02-lxc/index.php -o /var/www/html/index.php
+ 
+- name: Shell provision
+  hosts: master
+
+  tasks:
+  - name: Shell
+    shell:
+      cmd: | 
+        GET_CONTAINER_IP_HTML=$(sudo lxc-info -i html | awk '{print $2}')
+        iptables -t nat -A PREROUTING -p tcp -i eth0 --dport 80 -j DNAT --to-destination $GET_CONTAINER_IP_HTML:80
+        GET_CONTAINER_IP_PHP=$(sudo lxc-info -i php | awk '{print $2}')
+        iptables -t nat -A PREROUTING -p tcp -i eth0 --dport 80 -j DNAT --to-destination $GET_CONTAINER_IP_PHP:80

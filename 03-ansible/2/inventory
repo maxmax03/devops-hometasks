@@ -1,0 +1,9 @@
+master ansible_host=192.168.50.3 ansible_connection=local 
+html ansible_connection=lxc
+php ansible_connection=lxc
+
+[all:vars]
+ansible_connection=ssh
+ansible_user=vagrant
+ansible_password=vagrant
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
