@@ -1,6 +1,7 @@
 master.puppet ansible_host=192.168.50.1 ansible_connection=local 
 slave1.puppet ansible_host=192.168.50.2 ansible_connection=local
 slave2.puppet ansible_host=192.168.50.3 ansible_connection=local 
+mineserver.puppet ansible_host=192.168.50.4 ansible_connection=local
 
 [all:vars]
 ansible_connection=ssh
