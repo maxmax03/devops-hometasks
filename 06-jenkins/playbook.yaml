@@ -1,0 +1,164 @@
+---
+- name: Setup Jenkins
+  hosts: master
+  become: yes
+  vars:
+    jenkins_hostname: localhost #http://192.168.33.10
+    jenkins_admin_username: admin
+    jenkins_admin_password: admin
+    jenkins_java_options: "-Djenkins.install.runSetupWizard=false -Dhudson.security.csrf.DefaultCrumbIssuer.EXCLUDE_SESSION_ID=true"
+    jenkins_plugin_timeout: 300
+    jenkins_plugins:
+      - git
+      - github
+      - nexus-artifact-uploader
+      - publish-over-ssh
+      - pipeline
+      - golang
+      - ssh
+      - locale
+    jenkins_plugins_install_dependencies: true
+  pre_tasks:
+    - apt:
+        pkg:
+        - mc
+        - nano
+        - git
+        - build-essential
+        - jq
+        state: present
+  roles: 
+    - role: geerlingguy.java
+    - role: geerlingguy.jenkins
+
+  tasks:
+    - copy:
+        src: /vagrant/templates/
+        dest: /var/lib/jenkins/
+        owner: jenkins
+        group: jenkins
+
+    - unarchive:
+        src: templates/credentials.tgz
+        dest: /var/lib/jenkins/
+    
+- name: Setup Nexus
+  hosts: slave
+  become: yes
+  pre_tasks:
+      - apt:
+          pkg:
+          - mc
+          - nano        
+          - gpg
+          state: present
+      - apt_key:
+          url: https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public
+      - apt_repository:
+          repo: deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ buster main
+          state: present
+          update_cache: true
+  
+  vars:
+    java_packages:      
+       - adoptopenjdk-8-hotspot-jre
+  
+    nexus_admin_password: "admin"
+    nexus_annonymous_access: yes
+    nexus_config_maven: false
+    nexus_config_raw: true
+    nexus_repos_raw_hosted:
+      - name: word-cloud-builds
+        strict_content_validation: false
+        version_policy: release
+        write_policy: allow
+    nexus_roles:
+      - id: upload
+        name: upload
+        description: all uploaders
+        privileges:
+          - nx-repository-admin-raw-word-cloud-builds-*
+        roles:
+          - nx-admin
+      - id: download
+        name: download
+        description: all downloaders
+        privileges:
+          - nx-repository-view-*-*-read
+        roles: []
+    nexus_local_users:
+      - username: uploader
+        state: present
+        first_name: uploader
+        last_name: loader
+        email: support@company.com
+        password: "uploader"
+        roles:
+          - upload
+          - nx-admin
+      - username: downloader
+        state: present
+        first_name: downloader
+        last_name: loader
+        email: support@company.com
+        password: "downloader"
+        roles:
+          - download
+
+  roles:
+    - role: geerlingguy.java
+    - role: ansible-thoteam.nexus3-oss
+
+- name: Staging & Production
+  hosts: agent
+  tasks:
+    - name: Install pkgs
+      apt:
+        pkg:
+        - default-jre
+        - mc
+        - nano
+        - jq
+        - curl
+        state: present
+
+    - name: Enable password authentificaton
+      replace:
+        path: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication no$'
+        replace: 'PasswordAuthentication yes'
+    
+    - name: Change PasswordAuthentication
+      become: yes 
+      shell: sudo yes vagrant | passwd vagrant    
+                  
+    - name: restart sshd
+      service:
+        name: sshd
+        state: restarted
+              
+    - name: Create directory /opt/wordcloud
+      file:
+        path: /opt/wordcloud
+        state: directory
+        owner: vagrant
+        group: vagrant
+
+    - name: Create wordcloud.service
+      copy:
+        dest: /etc/systemd/system/wordcloud.service
+        content: |
+          [Unit]
+          Description=WordCloudGenerator
+          [Service]
+          WorkingDirectory=/opt/wordcloud
+          ExecStart=/opt/wordcloud/word-cloud-generator
+          Restart=always
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Start sevrice
+      systemd:
+        state: started
+        daemon_reload: yes
+        name: wordcloud.service
