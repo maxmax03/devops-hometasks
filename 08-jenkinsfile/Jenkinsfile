@@ -2,22 +2,22 @@ pipeline {
     agent any
     
     tools{
-        go 'Go 1.16'
+        go 'go 1.16'
     }
-    environment {
-        STAGE_IP='192.168.33.11'
-        NEXUS_URL='192.168.33.12'
-        PROD_IP='192.168.33.13'
-        NEXUS_REPO='word-cloud-builds'
+    environment{
+        STG_IP='192.168.33.80'
+        NEXUS_IP='192.168.33.90'
+        PROD_IP='192.168.33.85'
+        NEXUS_REPO='word-cloud-build'
         BRANCH='pipeline'
     }
     options {
         timestamps()
     }
     
-    stages{
-        stage('Get source code'){
-            steps{
+    stages {
+        stage('Get source code') {
+            steps {
                 git 'https://github.com/maxmax03/word-cloud-generator.git'
             }
         }
@@ -49,83 +49,81 @@ pipeline {
                 nexusArtifactUploader(
                     nexusVersion: 'nexus3',
                     protocol: 'http',
-                    nexusUrl: '192.168.33.12:8081',
-                    groupId: "pipeline",
-                    version: '1.$BUILD_NUMBER',
-                    repository: 'word-cloud-builds',
-                    credentialsId: 'uploadertest',
+                    nexusUrl: "${NEXUS_IP}:8081",
+                    groupId: "${BRANCH}",
+                    version: "1.${BUILD_NUMBER}",
+                    repository: "${NEXUS_REPO}",
+                    credentialsId: 'nexus-creds',
                     artifacts: [
                         [artifactId: 'word-cloud-generator',
-                        classifier: '',
-                        file: 'artifacts/word-cloud-generator.gz',
-                        type: 'gz' ]
+                         classifier: '',
+                         file: './artifacts/word-cloud-generator.gz',
+                         type: 'gz']
                     ]
                 )
             }
-        }
-        
-        stage('Deploy on Staging'){
-            environment{
-                        SSH_CREDS = credentials('vagranttest')
-            }
-            steps{
-                withCredentials([usernamePassword(credentialsId: 'uploadertest', usernameVariable: 'UPLOAD_USER', passwordVariable: 'UPLOAD_PASS')]) {
-                    sh '''
-                    sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_USR}@${STAGE_IP} -o StrictHostKeyChecking=no "sudo systemctl start wordcloud"
-                    sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_USR}@${STAGE_IP} "curl -X GET http://192.168.33.12:8081/repository/word-cloud-builds/1/word-cloud-generator/1.$BUILD_NUMBER/word-cloud-generator-1.$BUILD_NUMBER.gz --user ${UPLOAD_USER}:${UPLOAD_PASS}  -o /opt/wordcloud/word-cloud-generator.gz"
-                    sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_USR}@${STAGE_IP} gunzip -f /opt/wordcloud/word-cloud-generator.gz
-                    sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_USR}@${STAGE_IP} chmod +x /opt/wordcloud/word-cloud-generator
-                    sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_USR}@${STAGE_IP} sudo systemctl start wordcloud
-                    '''
-                }
-            }
-        }
+        }          
+        stage('Post-build tests') {
+            stages {
+                stage('Deploy on Staging'){
+                    environment{
+                        SSH_CREDS = credentials('slave_password')
+                    }
+                    steps{
+                        withCredentials([usernamePassword(credentialsId: 'nexus-creds', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASSWORD')]) {
+                            sh '''
+                            sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_PSW}@${STG_IP} -o StrictHostKeyChecking=no "sudo systemctl stop wordcloud"
+                            sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_PSW}@${STG_IP} "curl -X GET http://${NEXUS_IP}:8081/repository/${NEXUS_REPO}/${BRANCH}/word-cloud-generator/1.${BUILD_NUMBER}/word-cloud-generator-1.${BUILD_NUMBER}.gz --user ${NEXUS_USER}:${NEXUS_PASSWORD} -o /opt/wordcloud/word-cloud-generator.gz"
+                            sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_PSW}@${STG_IP} "gunzip -f /opt/wordcloud/word-cloud-generator.gz;chmod +x /opt/wordcloud/word-cloud-generator;sudo systemctl start wordcloud"
+                            '''
+                        }
+                    }
+                }    
                 stage('Parallel testing') {
-                parallel {
-                    stage('Parallel testing - Stage 1'){
-                        steps{
-                            sh '''res=`curl -s -H "Content-Type: application/json" -d '{"text":"ths is a really really really important thing this is"}' http://${STAGE_IP}:8888/version | jq '. | length'`
-                                  if [ "1" != "$res" ]; then
-                                    exit 99
-                                  fi
-                              
-                                  res=`curl -s -H "Content-Type: application/json" -d '{"text":"ths is a really really really important thing this is"}' http://${STAGE_IP}:8888/api | jq '. | length'`
-                                  if [ "7" != "$res" ]; then
-                                    exit 99
-                                  fi'''
+                    parallel {
+                        stage('Parallel testing - Stage 1'){
+                            steps{
+                                sh '''res=`curl -s -H "Content-Type: application/json" -d '{"text":"ths is a really really really important thing this is"}' http://${STG_IP}:8888/version | jq '. | length'`
+                                      if [ "1" != "$res" ]; then
+                                        exit 99
+                                      fi
+                                      
+                                      res=`curl -s -H "Content-Type: application/json" -d '{"text":"ths is a really really really important thing this is"}' http://${STG_IP}:8888/api | jq '. | length'`
+                                      if [ "7" != "$res" ]; then
+                                        exit 99
+                                      fi'''
+                            }
+                        }
+                        stage('Parallel testing - Stage 2'){
+                            steps{
+                                sh '''res=`curl -s -H "Content-Type: application/json" -d '{"text":"ths is a really really really important thing this is"}' http://${STG_IP}:8888/version | jq '. | length'`
+                                      if [ "1" != "$res" ]; then
+                                        exit 99
+                                      fi
+                                      
+                                      res=`curl -s -H "Content-Type: application/json" -d '{"text":"ths is a really really really important thing this is"}' http://${STG_IP}:8888/api | jq '. | length'`
+                                      if [ "7" != "$res" ]; then
+                                        exit 99
+                                      fi'''
+                            }
                         }
                     }
-                    stage('Parallel testing - Stage 2'){
-                        steps{
-                             sh '''res=`curl -s -H "Content-Type: application/json" -d '{"text":"ths is a really really really important thing this is"}' http://${STAGE_IP}:8888/version | jq '. | length'`
-                                  if [ "1" != "$res" ]; then
-                                    exit 99
-                                  fi
-                                          
-                                  res=`curl -s -H "Content-Type: application/json" -d '{"text":"ths is a really really really important thing this is"}' http://${STAGE_IP}:8888/api | jq '. | length'`
-                                  if [ "7" != "$res" ]; then
-                                    exit 99
-                                  fi'''
-                        }
-                    }
+                }
             }
         }
         stage('Deploy on PROD'){
             environment{
-                        SSH_CREDS = credentials('vagranttest')
+                SSH_CREDS = credentials('slave_password')
             }
             steps{
-                withCredentials([usernamePassword(credentialsId: 'uploadertest', usernameVariable: 'UPLOAD_USER', passwordVariable: 'UPLOAD_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'nexus-creds', usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASSWORD')]) {
                     sh '''
-                    sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_USR}@${PROD_IP} -o StrictHostKeyChecking=no "sudo systemctl start wordcloud"
-                    sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_USR}@${PROD_IP} "curl -X GET http://192.168.33.12:8081/repository/word-cloud-builds/1/word-cloud-generator/1.$BUILD_NUMBER/word-cloud-generator-1.$BUILD_NUMBER.gz --user ${UPLOAD_USER}:${UPLOAD_PASS} -o /opt/wordcloud/word-cloud-generator.gz"
-                    sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_USR}@${PROD_IP} gunzip -f /opt/wordcloud/word-cloud-generator.gz
-                    sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_USR}@${PROD_IP} chmod +x /opt/wordcloud/word-cloud-generator
-                    sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_USR}@${PROD_IP} sudo systemctl start wordcloud
+                    sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_PSW}@${PROD_IP} -o StrictHostKeyChecking=no "sudo systemctl stop wordcloud"
+                    sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_PSW}@${PROD_IP} "curl -X GET http://${NEXUS_IP}:8081/repository/${NEXUS_REPO}/${BRANCH}/word-cloud-generator/1.${BUILD_NUMBER}/word-cloud-generator-1.${BUILD_NUMBER}.gz --user ${NEXUS_USER}:${NEXUS_PASSWORD} -o /opt/wordcloud/word-cloud-generator.gz"
+                    sshpass -p ${SSH_CREDS_PSW} ssh ${SSH_CREDS_PSW}@${PROD_IP} "gunzip -f /opt/wordcloud/word-cloud-generator.gz;chmod +x /opt/wordcloud/word-cloud-generator;sudo systemctl start wordcloud"
                     '''
                 }
             }
         }
     }
 }
-    
