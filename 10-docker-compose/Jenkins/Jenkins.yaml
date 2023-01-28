@@ -1,0 +1,50 @@
+---
+- name: Setup Jenkins
+  hosts: localhost
+  become: yes
+  vars:
+    jenkins_hostname: localhost
+    jenkins_admin_username: admin
+    jenkins_admin_password: admin
+    jenkins_java_options: "-Djenkins.install.runSetupWizard=false -Dhudson.security.csrf.DefaultCrumbIssuer.EXCLUDE_SESSION_ID=true"
+    jenkins_plugin_timeout: 300
+    jenkins_plugins:
+      - git
+      - github
+      - nexus-artifact-uploader
+      - publish-over-ssh
+      - pipeline
+      - golang
+      - ssh
+      - locale
+      - ssh-build-agents
+      - timestamper
+    jenkins_plugins_install_dependencies: true
+  pre_tasks:
+    - apt:
+        pkg:
+        - mc
+        - nano
+        - git
+        - build-essential
+        - jq
+        - sshpass
+        state: present
+  roles: 
+    - role: geerlingguy.java
+    - role: geerlingguy.jenkins
+
+  tasks:
+    - copy:
+        src: /templates/
+        dest: /var/lib/jenkins/
+        owner: jenkins
+        group: jenkins
+
+    - unarchive:
+        src: templates/credentials.tgz
+        dest: /var/lib/jenkins/
+
+    - file:
+        path: /var/lib/jenkins/identity.key.enc
+        state: absent
