@@ -8,6 +8,14 @@ jobs:
     runs-on: ubuntu-20.04
     
     steps:
-     - uses: actions/checkout@v3
      - name: Docker image
-       run: docker build . --file devops-hometasks/09-docker/Dockerfile.multi --tag my-image-name:wcg
+     - uses: actions/checkout@v3
+     - run: docker build . --file Dockerfile.multi --tag my-image-name:wcg
+       
+     - name: Login GitHub
+     - uses: docker/login-action@v1
+       with:
+         registry: ghcr.io
+         username: ${{ github.actor }}
+         password: ${{ secrets.ACTION_TOKEN }}
+
