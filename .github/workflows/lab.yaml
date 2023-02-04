@@ -18,6 +18,7 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.ACTION_TOKEN }}
+    - run: "echo 'Hello from bottom'"
 
     - name: Docker push
       run: |
