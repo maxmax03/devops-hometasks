@@ -25,5 +25,5 @@ jobs:
         
      - name: Docker push
        run: |
-         echo "${${{ github.repository }},,}" >> ${{ GITHUB_REPOSITORY_OWNER }}
-         docker push ghcr.io/${{ GITHUB_REPOSITORY_OWNER }}:latest
+         echo ${${{ GITHUB_REPOSITORY_OWNER }},,}
+         docker push ghcr.io/${{ github.repository }}:latest
