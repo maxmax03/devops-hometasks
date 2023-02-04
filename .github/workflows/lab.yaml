@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Docker image
-      run: docker build . --file Dockerfile.multi --tag my-image-name:wcg
+    - run: docker build . --file Dockerfile.multi --tag my-image-name:wcg
 
     - name: Login GitHub
     - uses: docker/login-action@v1
