@@ -17,7 +17,7 @@ jobs:
          echo github.repository : ${{ github.repository }}
          
      - name: Login GitHub
-       uses: docker/login-action@v2
+       uses: docker/login-action@v1
        with:
          registry: ghcr.io
          username: ${{ secrets.USERNAME_TOKEN }}
