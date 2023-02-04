@@ -9,5 +9,6 @@ jobs:
     
     steps:
      - uses: actions/checkout@v3
-     - name: Test step
-       run: "echo 'Hello from bottom'"
+     - name: Docker image
+       run: docker build . --file Dockerfile --tag my-image-name:wcg
+       
