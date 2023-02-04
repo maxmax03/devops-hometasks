@@ -8,8 +8,8 @@ jobs:
     runs-on: ubuntu-20.04
     
     steps:
-     - name: Docker image
      - uses: actions/checkout@v3
+     - name: Docker image
      - run: docker build . --file Dockerfile.multi --tag my-image-name:wcg
        
      - name: Login GitHub
