@@ -1,13 +1,13 @@
 name: GitHub lab CI
 
 on: 
-  workflow_dispatch:
+   workflow_dispatch:
    
 jobs:
   build:
     runs-on: ubuntu-20.04
     
     steps:
-    - uses: actions/checkout@v3
-    - name: Docker image
-    - run: docker build . --file Dockerfile.multi --tag my-image-name:wcg
+     - uses: actions/checkout@v3
+     - name: Docker image
+       run: docker build . --file Dockerfile.multi --tag my-image-name:wcg
