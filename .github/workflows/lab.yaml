@@ -25,6 +25,13 @@ jobs:
           
       - name: Log in to registry
         run: echo "${{ secrets.ACTION_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
+      
+      - name: Login GitHub
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.ACTION_TOKEN }}
         
       - name: Push image
         run: |
