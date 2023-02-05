@@ -28,5 +28,5 @@ jobs:
         
       - name: Push image
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}
+          docker push ghcr.io/${{ github.repository_owner }}/wcg
 
