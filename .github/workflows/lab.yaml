@@ -24,9 +24,8 @@ jobs:
           echo github.repository : ${{ github.repository }}
           
       - name: Log in to registry
-        # This is where you will update the personal access token to ACTION_TOKEN
         run: echo "${{ secrets.ACTION_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
         
       - name: Push image
         run: |
-          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/wcg
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}
