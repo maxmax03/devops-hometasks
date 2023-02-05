@@ -19,7 +19,7 @@ jobs:
       - name: Build image
         run: |
           GITHUB=$(echo $github.repository_owner)
-          docker build -t wcg:latest -t ghcr.io/$GITHUB/wcg:latest -t ghcr.io/$GITHUB/wcg:${{ github.sha }} -f ./Dockerfile.multi .
+          docker build . --file Dockerfile.multi --tag my-image-name:wcg --label "runnumber=${GITHUB_RUN_ID}"
           echo github.actor : ${{ github.actor }}
           echo ${{ github.repository_owner }}
           
