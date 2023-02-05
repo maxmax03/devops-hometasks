@@ -2,31 +2,28 @@ name: GitHub lab CI
 
 on: 
   push:
-    branches: ['main']
   workflow_dispatch:
    
 jobs:
   build:
     runs-on: ubuntu-20.04
-    permissions:
-      contents: read
-      packages: write
     
     steps:
       - name: Ckeckout repository
         uses: actions/checkout@v3
+        with:
+          repository: maxmax03/devops-hometasks
         
       - name: Build image
         run: |
-          GITHUB=$(echo $github.repository_owner)
-          docker build . --file Dockerfile.multi --tag my-image-name:wcg --label "runnumber=${GITHUB_RUN_ID}"
-          echo github.actor : ${{ github.actor }}
-          echo ${{ github.repository_owner }}
+          run: |
+          OWNER=$(echo $GITHUB_REPOSITORY_OWNER | tr '[:upper:]' '[:lower:]')
+          docker build -t wcg:latest -t ghcr.io/$OWNER/wcg:latest -t ghcr.io/$OWNER/wcg:${{ github.sha }} -f ./Dockerfile.multi . 
           
       - name: Push image
         run: |
-          GITHUB=$(echo $github.repository_owner)
-          echo ${{ secrets.ACTION_TOKEN }} | docker login ghcr.io -u $GITHUB --password-stdin
-          docker push ghcr.io/$GITHUB/wcg:latest
-          docker push ghcr.io/$GITHUB/wcg:${{ github.sha }}
+          OWNER=$(echo $GITHUB_REPOSITORY_OWNER | tr '[:upper:]' '[:lower:]')
+          echo ${{ secrets.ACTION_TOKEN }} | docker login ghcr.io -u $OWNER --password-stdin
+          docker push ghcr.io/$OWNER/wcg:latest
+          docker push ghcr.io/$OWNER/wcg:${{ github.sha }}
           
