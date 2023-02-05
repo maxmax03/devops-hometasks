@@ -19,7 +19,7 @@ jobs:
       - name: Build image
         run: |
           GITHUB=$(echo $github.repository_owner)
-          docker build --tag wcg:latest --tag ghcr.io/$GITHUB/wcg:latest --tag ghcr.io/$GITHUB/wcg:${{ github.sha }} --file Dockerfile.multi .
+          docker build -t wcg:latest -t ghcr.io/$GITHUB/wcg:latest -t ghcr.io/$GITHUB/wcg:${{ github.sha }} -f ./Dockerfile.multi .
           echo github.actor : ${{ github.actor }}
           echo ${{ github.repository_owner }}
           
