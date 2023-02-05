@@ -1,0 +1,30 @@
+name: GitHub lab CI
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+  
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - uses: actions/checkout@v3
+        
+      - name: Build image
+        id: build
+        run: |
+          cd ./11-github-actions
+          OWNER=$(echo $GITHUB_REPOSITORY_OWNER | tr '[:upper:]' '[:lower:]')
+          docker build -t wcg:latest -t ghcr.io/$OWNER/wcg:latest -t ghcr.io/$OWNER/wcg:${{ github.sha }} -f ./Dockerfile.multi . 
+          
+      - name: Push image
+        run: |
+          OWNER=$(echo $GITHUB_REPOSITORY_OWNER | tr '[:upper:]' '[:lower:]')
+          echo ${{ secrets.ACTION_TOKEN }} | docker login ghcr.io -u $OWNER --password-stdin
+          docker push ghcr.io/$OWNER/wcg:latest
+          docker push ghcr.io/$OWNER/wcg:${{ github.sha }}
