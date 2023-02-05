@@ -17,6 +17,7 @@ jobs:
       - name: Build image
         run: |
           run: |
+          cd ./11-github-actions
           OWNER=$(echo $github.repository_owner | tr '[:upper:]' '[:lower:]')
           docker build -t wcg:latest -t ghcr.io/$OWNER/wcg:latest -t ghcr.io/$OWNER/wcg:${{ github.sha }} -f ./Dockerfile.multi . 
           
