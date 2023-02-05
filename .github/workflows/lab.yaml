@@ -17,7 +17,7 @@ jobs:
       - name: Build image
         run: |
           run: |
-          OWNER=$(echo $GITHUB_REPOSITORY_OWNER | tr '[:upper:]' '[:lower:]')
+          OWNER=$(echo $github.repository_owner | tr '[:upper:]' '[:lower:]')
           docker build -t wcg:latest -t ghcr.io/$OWNER/wcg:latest -t ghcr.io/$OWNER/wcg:${{ github.sha }} -f ./Dockerfile.multi . 
           
       - name: Push image
