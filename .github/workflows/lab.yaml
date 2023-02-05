@@ -18,15 +18,15 @@ jobs:
         
       - name: Build image
         run: |
-          GITHUB=$(echo $GITHUB_REPOSITORY_OWNER)
+          GITHUB=$(echo $github.repository_owner)
           docker build --tag wcg:latest --tag ghcr.io/$GITHUB/wcg:latest --tag ghcr.io/$GITHUB/wcg:${{ github.sha }} --file Dockerfile.multi .
           echo github.actor : ${{ github.actor }}
-          echo ${{ GITHUB_REPOSITORY_OWNER }}
+          echo ${{ github.repository_owner }}
           
       - name: Push image
         run: |
-          OWNER=$(echo $GITHUB_REPOSITORY_OWNER)
-          echo ${{ secrets.ACTION_TOKEN }} | docker login ghcr.io -u $OWNER --password-stdin
-          docker push ghcr.io/$OWNER/wcg:latest
-          docker push ghcr.io/$OWNER/wcg:${{ github.sha }}
+          GITHUB=$(echo $github.repository_owner)
+          echo ${{ secrets.ACTION_TOKEN }} | docker login ghcr.io -u $GITHUB --password-stdin
+          docker push ghcr.io/$GITHUB/wcg:latest
+          docker push ghcr.io/$GITHUB/wcg:${{ github.sha }}
           
