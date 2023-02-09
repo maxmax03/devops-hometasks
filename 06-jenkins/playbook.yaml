@@ -14,9 +14,21 @@
       - nexus-artifact-uploader
       - publish-over-ssh
       - pipeline
-      - golang
+      - pipeline-job
+      - pipeline-stage-view
+      - pipeline-stage-step
+      - pipeline-build-step
+      - pipeline-utility-steps
+      - build-pipeline-plugin
+      - ssh-pipeline-steps
+      - ssh-steps
+      - ssh-builds-agents
+      - ssh-agent
       - ssh
+      - ssh-credentials
       - locale
+      - timestamper
+      - golang
     jenkins_plugins_install_dependencies: true
   pre_tasks:
     - apt:
@@ -26,6 +38,7 @@
         - git
         - build-essential
         - jq
+        - sshpass
         state: present
   roles: 
     - role: geerlingguy.java
