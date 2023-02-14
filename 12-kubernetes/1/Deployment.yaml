@@ -19,7 +19,7 @@ spec:
       imagePullSecrets:
         - name: github-pull-secret
       containers:
-      - name: wcg
-        image: ghcr.io/maxmax03/wcg:fe0035f55fdc52fe299d5143fcdd12e3f4e790de
-        imagePullPolicy: Always
-        resources: {}
+        - name: wcg
+          image: ghcr.io/maxmax03/wcg:fe0035f55fdc52fe299d5143fcdd12e3f4e790de
+          imagePullPolicy: Always
+          resources: {}
