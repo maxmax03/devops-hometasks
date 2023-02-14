@@ -1,0 +1,25 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wcg
+  namespace: maxmax-wcg
+  labels:
+    app: wcg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wcg
+  template:
+    metadata:
+      labels:
+        app: wcg
+    spec:
+      imagePullSecrets:
+        - name: github-pull-secret
+      containers:
+      - name: wcg
+        image: ghcr.io/maxmax03/wcg:fe0035f55fdc52fe299d5143fcdd12e3f4e790de
+        imagePullPolicy: Always
+        resources: {}
