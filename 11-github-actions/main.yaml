@@ -4,27 +4,37 @@ on:
   push:
     branches: ['main']
   workflow_dispatch:
+
+env:
+  OWNER: '${{ github.repository_owner }}' 
   
 jobs:
   build:
     runs-on: ubuntu-20.04
-    permissions:
-      contents: read
-      packages: write
-    
+    # defaults:
+    #   run:  
+    #     working-directory: 11-github-actions
+    # permissions:
+    #   contents: read
+    #   packages: write
+
     steps:
-      - uses: actions/checkout@v3
-        
-      - name: Build image
-        id: build
+      - name: Ckeckout repository
+        uses: actions/checkout@v3
+        with:
+          repository: maxmax03/devops-hometasks
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.ACTION_TOKEN }}     
+      - name: Set lower case owner name
         run: |
-          cd ./11-github-actions
-          OWNER=$(echo $GITHUB_REPOSITORY_OWNER | tr '[:upper:]' '[:lower:]')
-          docker build -t wcg:latest -t ghcr.io/$OWNER/wcg:latest -t ghcr.io/$OWNER/wcg:${{ github.sha }} -f ./Dockerfile.multi . 
-          
-      - name: Push image
+          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}       
+      - name: Push Docker image
         run: |
-          OWNER=$(echo $GITHUB_REPOSITORY_OWNER | tr '[:upper:]' '[:lower:]')
-          echo ${{ secrets.ACTION_TOKEN }} | docker login ghcr.io -u $OWNER --password-stdin
-          docker push ghcr.io/$OWNER/wcg:latest
-          docker push ghcr.io/$OWNER/wcg:${{ github.sha }}
+          docker build -t ghcr.io/${{ env.OWNER_LC }}/wcg:${{ github.sha }} -t  ghcr.io/${{ env.OWNER_LC }}/wcg:latest --file ./11-github-actions/Dockerfile.multi .
+          docker push ghcr.io/${OWNER_LC}/wcg:${{ github.sha }}
+          docker push ghcr.io/${OWNER_LC}/wcg:latest
