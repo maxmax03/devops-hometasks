@@ -4,7 +4,7 @@ variable "files" {
     "Namespace.tf",
     "Deployment.tf",
     "Service.tf",
-    "Ingrees.tf",
+    "Ingress.tf",
     "provider.tf",
     "terraform.tfvars",
     "github/provider.tf",
