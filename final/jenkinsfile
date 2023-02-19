@@ -4,7 +4,7 @@ pipeline {
         timestamps()
     }
     stages {
-        stage ('Built WCG') {
+        stage ('Build app WCG') {
             agent {
                 dockerfile { 
                     filename 'final/Dockerfile.Golang' 
