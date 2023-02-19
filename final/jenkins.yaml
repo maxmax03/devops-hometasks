@@ -102,7 +102,7 @@
         - github
         - github-branch-source
         - golang
-        - nexus-artifact-uploade
+        - nexus-artifact-uploader
         - pipeline
         - pipeline-stage-view
         - pipeline-stage-step
